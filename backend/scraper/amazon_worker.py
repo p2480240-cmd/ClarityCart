@@ -226,12 +226,30 @@ async def _extract_products_from_page(page: Page) -> list[dict]:
 
 async def _goto_next_page(page: Page) -> bool:
     try:
-        next_btn = page.locator("a.s-pagination-next").first
-        if await next_btn.count() > 0 and await next_btn.is_visible() and not await next_btn.get_attribute("aria-disabled"):
-            await next_btn.click()
-            await page.wait_for_load_state("domcontentloaded")
-            await page.wait_for_timeout(PAGE_LOAD_WAIT_MS)
-            return True
+        # Amazon has several variations of the next button class
+        selectors = [
+            "a.s-pagination-next",
+            ".s-pagination-next.s-pagination-button"
+        ]
+        
+        for selector in selectors:
+            next_btn = page.locator(selector).first
+            if await next_btn.count() > 0 and await next_btn.is_visible() and not await next_btn.get_attribute("aria-disabled"):
+                href = await next_btn.get_attribute("href")
+                
+                # Try clicking first
+                await next_btn.click()
+                try:
+                    await page.wait_for_load_state("domcontentloaded", timeout=5000)
+                except Exception:
+                    # If click silently fails without navigating, manually goto the href
+                    if href:
+                        logger.info("Click did not trigger load, forcing navigation via href")
+                        await page.goto(f"https://www.amazon.in{href}", wait_until="domcontentloaded")
+                
+                await page.wait_for_timeout(PAGE_LOAD_WAIT_MS)
+                return True
+                
         return False
     except Exception as e:
         logger.warning(f"Failed to navigate to next page: {e}")

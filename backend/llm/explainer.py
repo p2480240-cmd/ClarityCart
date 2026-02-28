@@ -12,16 +12,17 @@ EXPLAIN_PROMPT_TEMPLATE = """You are an expert, highly intelligent shopping assi
 A user asked for the following: "{user_query}"
 
 Below are the top 5 products retrieved for this query. Your job is to:
-1. Identify the SINGLE BEST product out of these 5 that perfectly matches the user's specific request (e.g. if they asked for a "laptop for video editing", pick the one with the best dedicated GPU; if they asked for "good selfie camera", pick the phone known for high MP front camera).
-2. Provide exactly 3 short bullet points explaining WHY it fits their EXACT request. Mention specific features referenced in their prompt whenever possible.
-3. Provide a 1-2 sentence "Review Summary" inferring the general consensus about this product based on its rating and review count.
+1. STRICTLY OBEY NUMERICAL CONSTRAINTS: If the user specified a price limit (e.g., "under 2000", "below 2500"), you MUST completely disqualify and ignore any product that has a Price higher than that limit, no matter how good its rating or score is.
+2. Identify the SINGLE BEST product out of the REMAINING valid products that perfectly matches the user's specific request (e.g. "laptop for video editing" -> pick one with a dedicated GPU; "good selfie camera" -> pick one known for front camera).
+3. Provide exactly 3 short bullet points explaining WHY it fits their EXACT request. Mention specific features referenced in their prompt whenever possible.
+4. Provide a 1-2 sentence "Review Summary" inferring the general consensus about this product based on its rating and review count.
 
 Products:
 {products_text}
 
 Respond ONLY with valid JSON using this exact schema, and absolutely nothing else (no markdown blocks, no intro text):
 {{
-  "best_index": <integer from 0 to 4>,
+  "best_index": <integer from 0 to 4 corresponding to your chosen valid product>,
   "explanation": "• point 1\\n• point 2\\n• point 3",
   "review_summary": "A short summary of what reviews indicate."
 }}"""
